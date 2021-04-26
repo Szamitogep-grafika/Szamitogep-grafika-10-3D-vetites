@@ -17,6 +17,7 @@ public class Main extends PApplet {
 
 	float d = 300;
 	float vx = 1, vy = 1, vz = 1;
+	float alpha1, alpha2;
 
 	final static class Tinit {
 		float[][] matrix;
@@ -31,6 +32,19 @@ public class Main extends PApplet {
 			this.matrix = new float[n][n];
 			for (int i = 0; i < n; i++)
 				this.matrix[i][i] = 1;
+		}
+	}
+
+	class Axonometric {
+		float[][] matrix = new float[2][3];
+
+		public Axonometric(float c1, float c2, float c3, float a1, float a2) {
+			this.matrix[0][0] = -c1 * cos(radians(a1));
+			this.matrix[0][1] = c2 * cos(radians(a2));
+			this.matrix[0][2] = 0;
+			this.matrix[1][0] = -c1 * sin(radians(a1));
+			this.matrix[1][1] = -c2 * sin(radians(a2));
+			this.matrix[1][2] = c3;
 		}
 	}
 
@@ -86,18 +100,15 @@ public class Main extends PApplet {
 
 	public void draw() {
 		background(204);
-		line(0, originY, width, originY);  // TESTING
-		line(originX, 0, originX, height); // TESTING
+		//line(0, originY, width, originY);  // TESTING
+		//line(originX, 0, originX, height); // TESTING
 
-		//centralProjection(s);
-		//s += 5;
-		//println(s);
-
-		parallelProjection(new Vector(sin(vx), cos(vy), 1));
-		vx += 0.01;
-		vy += 0.01;
-
-
+		//centralProjection();
+		//parallelProjection();
+		//axonometricProjection();
+		//isometricAxonometricProjection();
+		//frontalAxonometricProjection();
+		dimetricAxonometricProjection(1, 1, 1);
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
@@ -125,6 +136,11 @@ public class Main extends PApplet {
 				point(x1, j);
 			}
 		}
+	}
+
+	void centralProjection() {
+		centralProjection(sin(radians(d)) * 100 + 300);
+		d += 1;
 	}
 
 	void centralProjection(float d) {
@@ -156,6 +172,12 @@ public class Main extends PApplet {
 
 			drawLine(x1, y1, x2, y2);
 		}
+	}
+
+	void parallelProjection() {
+		parallelProjection(new Vector(sin(vx), cos(vy), 1));
+		vx += 0.01;
+		vy += 0.01;
 	}
 
 	void parallelProjection(Vector v) {
@@ -190,19 +212,75 @@ public class Main extends PApplet {
 		}
 	}
 
+	void axonometricProjection() {
+		alpha1 += 1;
+		alpha2 += 0.3;
+		axonometricProjection(1, 1, 1, alpha1, alpha2);
+	}
+
+	void isometricAxonometricProjection() {
+		final float c = 1;
+		final float alpha = 30;
+		axonometricProjection(c, c, c, alpha, alpha);
+	}
+
+	void frontalAxonometricProjection() {
+		alpha1 = 45;
+		alpha2 = 0;
+		final float c1 = 0.5f, c2 = 1, c3 = 1;
+		axonometricProjection(c1, c2, c3, alpha1, alpha2);
+	}
+
+	void dimetricAxonometricProjection(float c1, float c2, float c3) {
+		alpha1 = degrees(atan(7f/8));
+		alpha2 = degrees(atan(1f/7));
+		axonometricProjection(c1, c2, c3, alpha1, alpha2);
+	}
+
+	void axonometricProjection(float c1, float c2, float c3, float alpha1, float alpha2) {
+		Axonometric axonometric = new Axonometric(c1, c2, c3, alpha1, alpha2);
+
+		float[] p;
+		for (TableRow row : table.rows()) {
+			p = new float[]{0, 0, 0};
+			p[0] = row.getInt("x1")/* - originX*/;
+			p[1] = row.getInt("y1")/* - originY*/;
+			p[2] = row.getInt("z1");
+			p = matrixMultiplication(axonometric.matrix, p);
+			//row.setFloat("x1", p[0] + originX);
+			//row.setFloat("y1", p[1] + originY);
+			float x1 = p[0] + originX;
+			float y1 = p[1] + originY;
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getInt("x2")/* - originX*/;
+			p[1] = row.getInt("y2")/* - originY*/;
+			p[2] = row.getInt("z2");
+			p = matrixMultiplication(axonometric.matrix, p);
+			//row.setFloat("x2", p[0] + originX);
+			//row.setFloat("y2", p[1] + originY);
+			float x2 = p[0] + originX;
+			float y2 = p[1] + originY;
+
+			drawLine(x1, y1, x2, y2);
+		}
+	}
+
 	float[] matrixMultiplication(float[][] t, float[] p) {
 		float[] transformed = new float[]{0, 0, 0, 1};
 
 		for (int i = 0; i < t.length; i++) {
 			float sum = 0;
-			for (int j = 0; j < t.length; j++) {
+			for (int j = 0; j < t[i].length; j++) {
 				sum += t[i][j] * p[j];
 			}
 			transformed[i] = sum;
 		}
-		for (int i = 0; i < t.length; i++) {
-			transformed[i] = transformed[i] / transformed[t.length - 1];
-		}
+
+		if (t.length == 4)
+			for (int i = 0; i < t.length; i++) {
+				transformed[i] = transformed[i] / transformed[t.length - 1];
+			}
 
 
 		return transformed;
