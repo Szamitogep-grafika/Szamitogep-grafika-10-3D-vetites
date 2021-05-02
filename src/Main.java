@@ -286,6 +286,36 @@ public class Main extends PApplet {
 		return transformed;
 	}
 
+	void rotate3d(float alpha) {
+		float[][] T = new Tinit(4).matrix;
+		// TODO: koordinata szerint epitse fel a T matrixot
+		T[1][1] = cos(radians(alpha));
+		T[1][2] = -sin(radians(alpha));
+		T[2][1] = sin(radians(alpha));
+		T[2][2] = cos(radians(alpha));
+
+		float[] p;
+		for (TableRow row : table.rows()) {
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
+			row.setFloat("z1", p[2]);
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
+			row.setFloat("z2", p[2]);
+		}
+	}
+
 	void transform(float[][] T, float originX, float originY, boolean checkOverflow, String method) {
 		for (TableRow row : table.rows()) {
 			float[] p = {0, 0, 1};
