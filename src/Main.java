@@ -95,7 +95,7 @@ public class Main extends PApplet {
 		table.addColumn("y2");
 		table.addColumn("z2");
 
-		table = loadTable("model.csv", "header");
+		table = loadTable("kocka.csv", "header");
 	}
 
 	public void draw() {
@@ -103,12 +103,15 @@ public class Main extends PApplet {
 		//line(0, originY, width, originY);  // TESTING
 		//line(originX, 0, originX, height); // TESTING
 
+		rotate3d(30);
 		//centralProjection();
-		//parallelProjection();
+		parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
-		dimetricAxonometricProjection(1, 1, 1);
+		//dimetricAxonometricProjection(1, 1, 1);
+
+
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
@@ -139,8 +142,7 @@ public class Main extends PApplet {
 	}
 
 	void centralProjection() {
-		centralProjection(sin(radians(d)) * 100 + 300);
-		d += 1;
+		centralProjection(d);
 	}
 
 	void centralProjection(float d) {
@@ -175,9 +177,7 @@ public class Main extends PApplet {
 	}
 
 	void parallelProjection() {
-		parallelProjection(new Vector(sin(vx), cos(vy), 1));
-		vx += 0.01;
-		vy += 0.01;
+		parallelProjection(new Vector(1, 2, 3));
 	}
 
 	void parallelProjection(Vector v) {
@@ -213,8 +213,8 @@ public class Main extends PApplet {
 	}
 
 	void axonometricProjection() {
-		alpha1 += 1;
-		alpha2 += 0.3;
+		//alpha1 += 1;
+		//alpha2 += 0.3;
 		axonometricProjection(1, 1, 1, alpha1, alpha2);
 	}
 
@@ -225,7 +225,7 @@ public class Main extends PApplet {
 	}
 
 	void frontalAxonometricProjection() {
-		alpha1 = 45;
+		alpha1 = 30;
 		alpha2 = 0;
 		final float c1 = 0.5f, c2 = 1, c3 = 1;
 		axonometricProjection(c1, c2, c3, alpha1, alpha2);
@@ -233,7 +233,7 @@ public class Main extends PApplet {
 
 	void dimetricAxonometricProjection(float c1, float c2, float c3) {
 		alpha1 = degrees(atan(7f/8));
-		alpha2 = degrees(atan(1f/7));
+		alpha2 = degrees(atan(1f/8));
 		axonometricProjection(c1, c2, c3, alpha1, alpha2);
 	}
 
@@ -277,7 +277,7 @@ public class Main extends PApplet {
 			transformed[i] = sum;
 		}
 
-		if (t.length == 4)
+		if (t.length == 4 && t[3][3] != 1)
 			for (int i = 0; i < t.length; i++) {
 				transformed[i] = transformed[i] / transformed[t.length - 1];
 			}
