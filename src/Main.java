@@ -151,9 +151,9 @@ public class Main extends PApplet {
 		float[] p;
 		for (TableRow row : table.rows()) {
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getInt("x1")/* - originX*/;
-			p[1] = row.getInt("y1")/* - originY*/;
-			p[2] = row.getInt("z1");
+			p[0] = row.getFloat("x1")/* - originX*/;
+			p[1] = row.getFloat("y1")/* - originY*/;
+			p[2] = row.getFloat("z1");
 			p = matrixMultiplication(T, p); // TODO: vegig kell osztani p[3]-mal
 			//row.setFloat("x1", p[0] + originX);
 			//row.setFloat("y1", p[1] + originY);
@@ -161,9 +161,9 @@ public class Main extends PApplet {
 			float y1 = p[1] + originY;
 
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getInt("x2")/* - originX*/;
-			p[1] = row.getInt("y2")/* - originY*/;
-			p[2] = row.getInt("z2");
+			p[0] = row.getFloat("x2")/* - originX*/;
+			p[1] = row.getFloat("y2")/* - originY*/;
+			p[2] = row.getFloat("z2");
 			p = matrixMultiplication(T, p); // TODO: vegig kell osztani p[3]-mal
 			//row.setFloat("x2", p[0] + originX);
 			//row.setFloat("y2", p[1] + originY);
@@ -189,20 +189,20 @@ public class Main extends PApplet {
 		float[] p;
 		for (TableRow row : table.rows()) {
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getInt("x1")/* - originX*/;
-			p[1] = row.getInt("y1")/* - originY*/;
-			p[2] = row.getInt("z1");
-			p = matrixMultiplication(T, p); // TODO: vegig kell osztani p[3]-mal
+			p[0] = row.getFloat("x1")/* - originX*/;
+			p[1] = row.getFloat("y1")/* - originY*/;
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T, p);
 			//row.setFloat("x1", p[0] + originX);
 			//row.setFloat("y1", p[1] + originY);
 			float x1 = p[0] + originX;
 			float y1 = p[1] + originY;
 
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getInt("x2")/* - originX*/;
-			p[1] = row.getInt("y2")/* - originY*/;
-			p[2] = row.getInt("z2");
-			p = matrixMultiplication(T, p); // TODO: vegig kell osztani p[3]-mal
+			p[0] = row.getFloat("x2")/* - originX*/;
+			p[1] = row.getFloat("y2")/* - originY*/;
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T, p);
 			//row.setFloat("x2", p[0] + originX);
 			//row.setFloat("y2", p[1] + originY);
 			float x2 = p[0] + originX;
@@ -243,9 +243,9 @@ public class Main extends PApplet {
 		float[] p;
 		for (TableRow row : table.rows()) {
 			p = new float[]{0, 0, 0};
-			p[0] = row.getInt("x1")/* - originX*/;
-			p[1] = row.getInt("y1")/* - originY*/;
-			p[2] = row.getInt("z1");
+			p[0] = row.getFloat("x1")/* - originX*/;
+			p[1] = row.getFloat("y1")/* - originY*/;
+			p[2] = row.getFloat("z1");
 			p = matrixMultiplication(axonometric.matrix, p);
 			//row.setFloat("x1", p[0] + originX);
 			//row.setFloat("y1", p[1] + originY);
@@ -253,9 +253,9 @@ public class Main extends PApplet {
 			float y1 = p[1] + originY;
 
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getInt("x2")/* - originX*/;
-			p[1] = row.getInt("y2")/* - originY*/;
-			p[2] = row.getInt("z2");
+			p[0] = row.getFloat("x2")/* - originX*/;
+			p[1] = row.getFloat("y2")/* - originY*/;
+			p[2] = row.getFloat("z2");
 			p = matrixMultiplication(axonometric.matrix, p);
 			//row.setFloat("x2", p[0] + originX);
 			//row.setFloat("y2", p[1] + originY);
