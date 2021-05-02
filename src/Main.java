@@ -458,6 +458,9 @@ public class Main extends PApplet {
 	public void keyPressed() {
 		if (table.getRowCount() % 2 == 0)   // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
 			switch (key) {                  // A három funkció közül egyszerre csak az egyik működjön
+				case 'x': {
+					rotate3d(30f);
+				}
 				case 't': {
 					translate = !translate;
 					rotate = false;
