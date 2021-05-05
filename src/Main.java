@@ -7,7 +7,7 @@ public class Main extends PApplet {
 	int originX;  // TESTING
 	int originY; // TESTING
 
-	Table table;
+	Table table3d;
 	boolean translate = false;
 	boolean rotate = false;
 	final int rotateAngle = 20;
@@ -70,7 +70,7 @@ public class Main extends PApplet {
 
 		public void find() {
 			float x, y;
-			for (TableRow row : table.rows()) {
+			for (TableRow row : table3d.rows()) {
 				x = row.getFloat("x");
 				y = row.getFloat("y");
 
@@ -87,17 +87,17 @@ public class Main extends PApplet {
 		originX = width / 2;  // TESTING
 		originY = height / 2; // TESTING
 
-		table = new Table();
-		table.addColumn("x1");
-		table.addColumn("y1");
-		table.addColumn("z1");
-		table.addColumn("x2");
-		table.addColumn("y2");
-		table.addColumn("z2");
+		table3d = new Table();
+		table3d.addColumn("x1");
+		table3d.addColumn("y1");
+		table3d.addColumn("z1");
+		table3d.addColumn("x2");
+		table3d.addColumn("y2");
+		table3d.addColumn("z2");
 
 		try {
-			table = loadTable("model.csv", "header");
-			if (table == null) throw new Exception("Nem lehet olvasni a modell-leíró állományt!");
+			table3d = loadTable("model.csv", "header");
+			if (table3d == null) throw new Exception("Nem lehet olvasni a modell-leíró állományt!");
 		} catch (Exception e) {
 			println(e.getMessage());
 			System.exit(1);
@@ -156,7 +156,7 @@ public class Main extends PApplet {
 		T[3][2] = -1 / d;
 
 		float[] p;
-		for (TableRow row : table.rows()) {
+		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0, 1};
 			p[0] = row.getFloat("x1")/* - originX*/;
 			p[1] = row.getFloat("y1")/* - originY*/;
@@ -192,7 +192,7 @@ public class Main extends PApplet {
 		T[1][2] = -v.y / v.z;
 
 		float[] p;
-		for (TableRow row : table.rows()) {
+		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0, 1};
 			p[0] = row.getFloat("x1")/* - originX*/;
 			p[1] = row.getFloat("y1")/* - originY*/;
@@ -246,7 +246,7 @@ public class Main extends PApplet {
 		Axonometric axonometric = new Axonometric(c1, c2, c3, alpha1, alpha2);
 
 		float[] p;
-		for (TableRow row : table.rows()) {
+		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0};
 			p[0] = row.getFloat("x1")/* - originX*/;
 			p[1] = row.getFloat("y1")/* - originY*/;
@@ -311,7 +311,7 @@ public class Main extends PApplet {
 		T[2][2] = cos(radians(alpha));
 
 		float[] p;
-		for (TableRow row : table.rows()) {
+		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0, 1};
 			p[0] = row.getFloat("x1");
 			p[1] = row.getFloat("y1");
@@ -333,7 +333,7 @@ public class Main extends PApplet {
 	}
 
 	void transform(float[][] T, float originX, float originY, boolean checkOverflow, String method) {
-		for (TableRow row : table.rows()) {
+		for (TableRow row : table3d.rows()) {
 			float[] p = {0, 0, 1};
 			p[0] = row.getFloat("x1") - originX;
 			p[1] = row.getFloat("y1") - originY;
@@ -433,7 +433,7 @@ public class Main extends PApplet {
 				break;
 			}
 			case "scale": {
-				TableRow row0 = table.getRow(0);
+				TableRow row0 = table3d.getRow(0);
 
 				MinMax mm = new MinMax(row0.getFloat("x"), row0.getFloat("y"), row0.getFloat("x"), row0.getFloat("y"));
 				mm.find();
@@ -472,7 +472,7 @@ public class Main extends PApplet {
 	}
 
 	public void keyPressed() {
-		if (table.getRowCount() % 2 == 0)   // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
+		if (table3d.getRowCount() % 2 == 0)   // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
 			switch (key) {                  // A három funkció közül egyszerre csak az egyik működjön
 				case 'x': {
 					rotate3d(1f);
