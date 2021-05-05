@@ -95,7 +95,13 @@ public class Main extends PApplet {
 		table.addColumn("y2");
 		table.addColumn("z2");
 
-		table = loadTable("kocka.csv", "header");
+		try {
+			table = loadTable("model.csv", "header");
+			if (table == null) throw new Exception("Nem lehet olvasni a modell-leíró állományt!");
+		} catch (Exception e) {
+			println(e.getMessage());
+			System.exit(1);
+		}
 	}
 
 	public void draw() {
@@ -103,15 +109,14 @@ public class Main extends PApplet {
 		//line(0, originY, width, originY);  // TESTING
 		//line(originX, 0, originX, height); // TESTING
 
-		rotate3d(30);
+		//d+=0.5;
+		//rotate3d(0.5f);
 		//centralProjection();
 		parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
 		//dimetricAxonometricProjection(1, 1, 1);
-
-
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
