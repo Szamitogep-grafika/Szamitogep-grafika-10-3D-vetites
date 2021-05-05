@@ -282,10 +282,21 @@ public class Main extends PApplet {
 			transformed[i] = sum;
 		}
 
-		if (t.length == 4 && t[3][3] != 1)
-			for (int i = 0; i < t.length; i++) {
-				transformed[i] = transformed[i] / transformed[t.length - 1];
+		try {
+			if (transformed[3] == 0) {
+				throw new ArithmeticException("Div null!!!");
 			}
+			else {
+				if (t.length == 4 && transformed[3] != 1) {
+					for (int i = 0; i < t.length; i++) {
+						transformed[i] = transformed[i] / transformed[t.length - 1];
+					}
+				}
+			}
+		}
+		catch (ArithmeticException ae) {
+			println(ae);
+		}
 
 
 		return transformed;
