@@ -4,10 +4,15 @@ import processing.data.TableRow;
 import processing.event.MouseEvent;
 
 public class Main extends PApplet {
+	boolean firstRun = true;
 	int originX;  // TESTING
 	int originY; // TESTING
 
-	float[][] T = new Tinit(3).matrix;;
+	BoundingBox boundingBox = new BoundingBox();
+	Pixel projectionCenter = new Pixel();
+
+	float[][] T = new Tinit(3).matrix;
+
 
 	Table table3d;
 	Table table2d;
@@ -36,7 +41,7 @@ public class Main extends PApplet {
 		}
 	}
 
-	class Axonometric {
+	static class Axonometric {
 		float[][] matrix = new float[2][3];
 
 		public Axonometric(float c1, float c2, float c3, float a1, float a2) {
@@ -49,7 +54,7 @@ public class Main extends PApplet {
 		}
 	}
 
-	class Vector {
+	static class Vector {
 		float x, y, z;
 
 		public Vector(float x, float y, float z) {
@@ -59,34 +64,11 @@ public class Main extends PApplet {
 		}
 	}
 
-	class MinMax {
-		float minX, minY, maxX, maxY;
-
-		public MinMax(float minX, float minY, float maxX, float maxY) {
-			this.minX = minX;
-			this.minY = minY;
-			this.maxX = maxX;
-			this.maxY = maxY;
-		}
-
-		public void find() {
-			float x1, y1, x2, y2;
-			for (TableRow row : table2d.rows()) {
-				x1 = row.getFloat("x1");
-				y1 = row.getFloat("y1");
-				x2 = row.getFloat("x2");
-				y2 = row.getFloat("y2");
-
-				if (x1 < minX) minX = x1;
-				if (y1 < minY) minY = y1;
-				if (x1 > maxX) maxX = x1;
-				if (y1 > maxY) maxY = y1;
-			}
-		}
-	}
-
-	class Pixel {
+	static class Pixel {
 		float x, y;
+
+		public Pixel() {
+		}
 
 		public Pixel(float x, float y) {
 			this.x = x;
@@ -95,7 +77,8 @@ public class Main extends PApplet {
 	}
 
 	class BoundingBox {
-		float x1, y1, x2, y2;
+		float x1, y1, x2, y2, width, height;
+		Pixel center = new Pixel();
 
 		public BoundingBox() {
 		}
@@ -112,10 +95,15 @@ public class Main extends PApplet {
 				if (row.getFloat("x2") > x2) x2 = row.getFloat("x2");
 				if (row.getFloat("y2") > y2) y2 = row.getFloat("y2");
 			}
+
+			width = x2 - x1;
+			height = y2 - y1;
+			center.x = (x1 + x2) / 2;
+			center.y = (y1 + y2) / 2;
 		}
 
-		public Pixel center() {
-			return new Pixel((x1+x2)/2, (y1+y2)/2);
+		public void draw() {
+			rect(x1, y1, width, height);
 		}
 
 		@Override
@@ -155,23 +143,33 @@ public class Main extends PApplet {
 			println(e.getMessage());
 			System.exit(1);
 		}
-	}
 
-	public void draw() {
-		background(204);
-		stroke(160);
-		line(0, originY, width, originY);  // TESTING
-		line(originX, 0, originX, height); // TESTING
-		stroke(0);
-
-		//d+=0.5;
-		//rotate3d(0.5f);
-		//centralProjection();
-		parallelProjection();
+		centralProjection();
+		//parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
 		//dimetricAxonometricProjection(1, 1, 1);
+		BoundingBox boundingBox = new BoundingBox();
+		boundingBox.fit();
+		projectionCenter.x = width / 2f - boundingBox.center.x;
+		projectionCenter.y = height / 2f - boundingBox.center.y;
+	}
+
+	public void draw() {
+		background(204);
+
+		d = 245;
+		//rotate3d(0.5f);
+		centralProjection();
+		//parallelProjection();
+		//axonometricProjection();
+		//isometricAxonometricProjection();
+		//frontalAxonometricProjection();
+		//dimetricAxonometricProjection(1, 1, 1);
+		drawProjection();
+
+		firstRun = false;
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
@@ -202,12 +200,65 @@ public class Main extends PApplet {
 	}
 
 	void drawProjection() {
-		BoundingBox boundingBox = new BoundingBox();
-		boundingBox.fit();
-		translate(width/2 - boundingBox.center().x, height/2 - boundingBox.center().y);
+		translate(projectionCenter.x, projectionCenter.y);
+/*
+		if (boundingBox.width > width || boundingBox.height > height) {
+			float ratio = boundingBox.width / boundingBox.height;
+			float scaleRatio;
+			if (ratio > width / height)
+				scaleRatio = (width) / boundingBox.width;
+			else
+				scaleRatio = (height) / boundingBox.height;
+			scale(scaleRatio, scaleRatio, true);
+		}
 
+ */
+
+		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
+			if (boundingBox.x1 < 0)
+				projectionCenter.x -= (boundingBox.x1);
+			if (boundingBox.y1 < 0)
+				projectionCenter.y -= (boundingBox.y1);
+			if (boundingBox.x2 > width)
+				projectionCenter.x -= (boundingBox.x2 - width);
+			if (boundingBox.y2 > height)
+				projectionCenter.y -= (boundingBox.y2 - height);
+			translate(projectionCenter.x, projectionCenter.y);
+		}
+
+		boundingBox.draw();
 		for (TableRow row : table2d.rows()) {
 			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
+		}
+	}
+
+	void calculateProjection(float[][] T3d) {
+		table2d.clearRows();
+		float[] p;
+		int i = 0;
+		for (TableRow row : table3d.rows()) {
+			p = new float[]{0, 0, 0, 1};
+
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T3d, p);
+			float x1 = p[0];
+			float y1 = p[1];
+			table2d.getRow(i).setFloat("x1", x1);
+			table2d.getRow(i).setFloat("y1", y1);
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T3d, p);
+			float x2 = p[0];
+			float y2 = p[1];
+			table2d.getRow(i).setFloat("x2", x2);
+			table2d.getRow(i).setFloat("y2", y2);
+
+			i++;
 		}
 	}
 
@@ -216,34 +267,11 @@ public class Main extends PApplet {
 	}
 
 	void centralProjection(float d) {
-		float[][] T = new Tinit(4).matrix;
-		T[2][2] = 0;
-		T[3][2] = -1 / d;
+		float[][] T3d = new Tinit(4).matrix;
+		T3d[2][2] = 0;
+		T3d[3][2] = -1 / d;
 
-		float[] p;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x1")/* - originX*/;
-			p[1] = row.getFloat("y1")/* - originY*/;
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T, p);
-			//row.setFloat("x1", p[0] + originX);
-			//row.setFloat("y1", p[1] + originY);
-			float x1 = p[0] + originX;
-			float y1 = p[1] + originY;
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2")/* - originX*/;
-			p[1] = row.getFloat("y2")/* - originY*/;
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T, p);
-			//row.setFloat("x2", p[0] + originX);
-			//row.setFloat("y2", p[1] + originY);
-			float x2 = p[0] + originX;
-			float y2 = p[1] + originY;
-
-			drawLine(x1, y1, x2, y2);
-		}
+		calculateProjection(T3d);
 	}
 
 	void parallelProjection() {
@@ -256,42 +284,7 @@ public class Main extends PApplet {
 		T3d[0][2] = -v.x / v.z;
 		T3d[1][2] = -v.y / v.z;
 
-		table2d.clearRows();
-		float[] p;
-		int i = 0;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
-			table2d.getRow(i);
-			//TableRow newRow2d = table2d.addRow();
-
-			p[0] = row.getFloat("x1")/* - originX*/;
-			p[1] = row.getFloat("y1")/* - originY*/;
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T3d, p);
-			//row.setFloat("x1", p[0] + originX);
-			//row.setFloat("y1", p[1] + originY);
-			float x1 = p[0] /*+ originX*/;
-			float y1 = p[1] /*+ originY*/;
-			table2d.getRow(i).setFloat("x1", x1);
-			table2d.getRow(i).setFloat("y1", y1);
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2")/* - originX*/;
-			p[1] = row.getFloat("y2")/* - originY*/;
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T3d, p);
-			//row.setFloat("x2", p[0] + originX);
-			//row.setFloat("y2", p[1] + originY);
-			float x2 = p[0] /*+ originX*/;
-			float y2 = p[1] /*+ originY*/;
-
-			table2d.getRow(i).setFloat("x2", x2);
-			table2d.getRow(i).setFloat("y2", y2);
-
-			//drawLine(x1, y1, x2, y2);
-			i++;
-		}
-		drawProjection();
+		calculateProjection(T3d);
 	}
 
 	void axonometricProjection() {
@@ -322,11 +315,13 @@ public class Main extends PApplet {
 	void axonometricProjection(float c1, float c2, float c3, float alpha1, float alpha2) {
 		Axonometric axonometric = new Axonometric(c1, c2, c3, alpha1, alpha2);
 
+		calculateProjection(axonometric.matrix);
+		/*
 		float[] p;
 		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0};
-			p[0] = row.getFloat("x1")/* - originX*/;
-			p[1] = row.getFloat("y1")/* - originY*/;
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
 			p[2] = row.getFloat("z1");
 			p = matrixMultiplication(axonometric.matrix, p);
 			//row.setFloat("x1", p[0] + originX);
@@ -335,17 +330,16 @@ public class Main extends PApplet {
 			float y1 = p[1] + originY;
 
 			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2")/* - originX*/;
-			p[1] = row.getFloat("y2")/* - originY*/;
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
 			p[2] = row.getFloat("z2");
 			p = matrixMultiplication(axonometric.matrix, p);
-			//row.setFloat("x2", p[0] + originX);
-			//row.setFloat("y2", p[1] + originY);
 			float x2 = p[0] + originX;
 			float y2 = p[1] + originY;
 
 			drawLine(x1, y1, x2, y2);
 		}
+		*/
 	}
 
 	float[] matrixMultiplication(float[][] t, float[] p) {
@@ -408,58 +402,54 @@ public class Main extends PApplet {
 		}
 	}
 
-	void transform(float originX, float originY, boolean checkOverflow, String method) {
+	void transform(String method) {
 		float[] p;
 
 		for (TableRow row : table2d.rows()) {
 			p = new float[]{0, 0, 1};
-			p[0] = row.getFloat("x1")/* - originX*/;
-			p[1] = row.getFloat("y1")/* - originY*/;
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
 			p = matrixMultiplication(T, p);
-			row.setFloat("x1", p[0]/* + originX*/);
-			row.setFloat("y1", p[1]/* + originY*/);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
 
 			p = new float[]{0, 0, 1};
-			p[0] = row.getFloat("x2")/* - originX*/;
-			p[1] = row.getFloat("y2")/* - originY*/;
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
 			p = matrixMultiplication(T, p);
-			row.setFloat("x2", p[0]/* + originX*/);
-			row.setFloat("y2", p[1]/* + originY*/);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
 		}
-		/*
-		for (TableRow row : table2d.rows()) {
-			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
-		}
-		 */
 
-		if (checkOverflow)
-			checkOverflow(method);
+		boundingBox.fit();
 	}
 
-	void translate(boolean checkOverflow) {
+	void translate() {
 		countClicks++;
 
 		if (countClicks % 2 == 0) {
 			transformX = mouseX - transformX;
 			transformY = mouseY - transformY;
+			projectionCenter.x += transformX;
+			projectionCenter.y += transformY;
 			countClicks = 0;
 
-			translate(transformX, transformY, checkOverflow);
+			translate(transformX, transformY);
 		} else {
 			transformX = mouseX;
 			transformY = mouseY;
 		}
 	}
 
-	public void translate(float transformX, float transformY, boolean checkOverflow) {
+	public void translate(float transformX, float transformY) {
 		T = new Tinit(3).matrix;
 		T[0][2] = transformX;
 		T[1][2] = transformY;
 
-		transform(originX, originY, checkOverflow, "translate");
+		transform("translate");
 	}
 
-	void scale(boolean checkOverflow) {
+	void scale() {
 		countClicks++;
 
 		if (countClicks % 2 == 0) {
@@ -477,66 +467,28 @@ public class Main extends PApplet {
 			}
 			// TESTING END
 
-			scale(transformX, transformY, checkOverflow);
+			scale(transformX, transformY, true);
 		} else {
 			transformX = mouseX;
 			transformY = mouseY;
 		}
 	}
 
-	void scale(float transformX, float transformY, boolean checkOverflow) {
+	void scale(float transformX, float transformY, boolean keepRatio) {
 		T = new Tinit().matrix;
 		T[0][0] = transformX;
 		T[1][1] = transformY;
 
-		transform(originX, originY, checkOverflow, "scale");
-	}
-
-	public void checkOverflow(String method) {
-		float deltaX = 0, deltaY = 0;
-
-		switch (method) {
-			case "translate": {
-				MinMax mm = new MinMax(originX, originY, width, height);
-				mm.find();
-				if (originX - mm.minX > 0) deltaX = originX - mm.minX;
-				if (width - mm.maxX < 0) deltaX = width - mm.maxX;
-				if (originY - mm.minY > 0) deltaY = originY - mm.minY;
-				if (height - mm.maxY < 0) deltaY = height - mm.maxY;
-
-				if (deltaX != 0 || deltaY != 0) translate(deltaX, deltaY, false);
-				break;
-			}
-			case "scale": {
-				TableRow row0 = table2d.getRow(0);
-
-				MinMax mm = new MinMax(row0.getFloat("x1"), row0.getFloat("y1"), row0.getFloat("x2"), row0.getFloat("y2"));
-				mm.find();
-
-				deltaX = 1;
-				deltaY = 1;
-
-				if (mm.maxX - mm.minX > width - originX) {
-					deltaX = (width - originX) / (mm.maxX - mm.minX);
-				}
-				if (mm.maxY - mm.minY > height - originY) {
-					deltaY = (height - originY) / (mm.maxY - mm.minY);
-				}
-
-				scale(deltaX, deltaY, false);
-				checkOverflow("translate");
-				break;
-			}
-		}
+		transform("scale");
 	}
 
 	public void mousePressed() {
 		if (translate || scale) {
 			if (translate) {
-				translate(false);
+				translate();
 			}
 			if (scale) {
-				scale(true);
+				scale();
 			}
 		} else {
 			println(mouseX, mouseY); // DEBUG
@@ -547,17 +499,24 @@ public class Main extends PApplet {
 		if (table3d.getRowCount() % 2 == 0)   // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
 			switch (key) {                  // A három funkció közül egyszerre csak az egyik működjön
 				case 'x': {
+					translate = false;
+					scale = false;
 					rotate3d(1f);
+					break;
 				}
 				case 't': {
 					translate = !translate;
 					scale = false;
+					println("Translate: " + (translate ? "on" : "off"));
 					break;
 				}
 				case 's': {
 					scale = !scale;
 					translate = false;
 					break;
+				}
+				case '4': {
+					projectionCenter.x -= 250;
 				}
 			}
 	}
@@ -567,9 +526,9 @@ public class Main extends PApplet {
 	public void mouseWheel(MouseEvent event) {
 		float e = event.getCount();
 		if (e < 0)
-			scale(2, 2, true);
+			scale(2, 2);
 		else
-			scale(0.5F, 0.5F, true);
+			scale(0.5F, 0.5F);
 	}
 	// TESTING END
 
