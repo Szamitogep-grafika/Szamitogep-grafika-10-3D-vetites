@@ -207,7 +207,6 @@ public class Main extends PApplet {
 		translate(width/2 - boundingBox.center().x, height/2 - boundingBox.center().y);
 
 		for (TableRow row : table2d.rows()) {
-			// TODO: téglalap a vetület köré, azt középre tolni
 			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
 		}
 	}
