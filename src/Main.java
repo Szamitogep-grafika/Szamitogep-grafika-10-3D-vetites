@@ -7,10 +7,11 @@ public class Main extends PApplet {
 	int originX;  // TESTING
 	int originY; // TESTING
 
+	float[][] T = new Tinit(3).matrix;;
+
 	Table table3d;
+	Table table2d;
 	boolean translate = false;
-	boolean rotate = false;
-	final int rotateAngle = 20;
 	boolean scale = false;
 	float transformX, transformY;
 	int countClicks = 0;
@@ -69,23 +70,69 @@ public class Main extends PApplet {
 		}
 
 		public void find() {
-			float x, y;
-			for (TableRow row : table3d.rows()) {
-				x = row.getFloat("x");
-				y = row.getFloat("y");
+			float x1, y1, x2, y2;
+			for (TableRow row : table2d.rows()) {
+				x1 = row.getFloat("x1");
+				y1 = row.getFloat("y1");
+				x2 = row.getFloat("x2");
+				y2 = row.getFloat("y2");
 
-				if (x < minX) minX = x;
-				if (y < minY) minY = y;
-				if (x > maxX) maxX = x;
-				if (y > maxY) maxY = y;
+				if (x1 < minX) minX = x1;
+				if (y1 < minY) minY = y1;
+				if (x1 > maxX) maxX = x1;
+				if (y1 > maxY) maxY = y1;
 			}
+		}
+	}
+
+	class Pixel {
+		float x, y;
+
+		public Pixel(float x, float y) {
+			this.x = x;
+			this.y = y;
+		}
+	}
+
+	class BoundingBox {
+		float x1, y1, x2, y2;
+
+		public BoundingBox() {
+		}
+
+		public void fit() {
+			x1 = table2d.getRow(0).getFloat("x1");
+			y1 = table2d.getRow(0).getFloat("y1");
+			x2 = table2d.getRow(0).getFloat("x2");
+			y2 = table2d.getRow(0).getFloat("y2");
+
+			for (TableRow row : table2d.rows()) {
+				if (row.getFloat("x1") < x1) x1 = row.getFloat("x1");
+				if (row.getFloat("y1") < y1) y1 = row.getFloat("y1");
+				if (row.getFloat("x2") > x2) x2 = row.getFloat("x2");
+				if (row.getFloat("y2") > y2) y2 = row.getFloat("y2");
+			}
+		}
+
+		public Pixel center() {
+			return new Pixel((x1+x2)/2, (y1+y2)/2);
+		}
+
+		@Override
+		public String toString() {
+			return "BoundingBox{" +
+					"x1=" + x1 +
+					", y1=" + y1 +
+					", x2=" + x2 +
+					", y2=" + y2 +
+					'}';
 		}
 	}
 
 	public void setup() {
 		size(640, 480);
-		originX = width / 2;  // TESTING
-		originY = height / 2; // TESTING
+		originX = 0 / 2;  // TESTING
+		originY = 0 / 2; // TESTING
 
 		table3d = new Table();
 		table3d.addColumn("x1");
@@ -94,6 +141,12 @@ public class Main extends PApplet {
 		table3d.addColumn("x2");
 		table3d.addColumn("y2");
 		table3d.addColumn("z2");
+
+		table2d = new Table();
+		table2d.addColumn("x1");
+		table2d.addColumn("y1");
+		table2d.addColumn("x2");
+		table2d.addColumn("y2");
 
 		try {
 			table3d = loadTable("model.csv", "header");
@@ -106,8 +159,10 @@ public class Main extends PApplet {
 
 	public void draw() {
 		background(204);
-		//line(0, originY, width, originY);  // TESTING
-		//line(originX, 0, originX, height); // TESTING
+		stroke(160);
+		line(0, originY, width, originY);  // TESTING
+		line(originX, 0, originX, height); // TESTING
+		stroke(0);
 
 		//d+=0.5;
 		//rotate3d(0.5f);
@@ -143,6 +198,17 @@ public class Main extends PApplet {
 			for (j = Math.min(y1, y2); j < (Math.max(y1, y2)); j++) {
 				point(x1, j);
 			}
+		}
+	}
+
+	void drawProjection() {
+		BoundingBox boundingBox = new BoundingBox();
+		boundingBox.fit();
+		translate(width/2 - boundingBox.center().x, height/2 - boundingBox.center().y);
+
+		for (TableRow row : table2d.rows()) {
+			// TODO: téglalap a vetület köré, azt középre tolni
+			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
 		}
 	}
 
@@ -186,35 +252,47 @@ public class Main extends PApplet {
 	}
 
 	void parallelProjection(Vector v) {
-		float[][] T = new Tinit(4).matrix;
-		T[2][2] = 0;
-		T[0][2] = -v.x / v.z;
-		T[1][2] = -v.y / v.z;
+		float[][] T3d = new Tinit(4).matrix;
+		T3d[2][2] = 0;
+		T3d[0][2] = -v.x / v.z;
+		T3d[1][2] = -v.y / v.z;
 
+		table2d.clearRows();
 		float[] p;
+		int i = 0;
 		for (TableRow row : table3d.rows()) {
 			p = new float[]{0, 0, 0, 1};
+			table2d.getRow(i);
+			//TableRow newRow2d = table2d.addRow();
+
 			p[0] = row.getFloat("x1")/* - originX*/;
 			p[1] = row.getFloat("y1")/* - originY*/;
 			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T, p);
+			p = matrixMultiplication(T3d, p);
 			//row.setFloat("x1", p[0] + originX);
 			//row.setFloat("y1", p[1] + originY);
-			float x1 = p[0] + originX;
-			float y1 = p[1] + originY;
+			float x1 = p[0] /*+ originX*/;
+			float y1 = p[1] /*+ originY*/;
+			table2d.getRow(i).setFloat("x1", x1);
+			table2d.getRow(i).setFloat("y1", y1);
 
 			p = new float[]{0, 0, 0, 1};
 			p[0] = row.getFloat("x2")/* - originX*/;
 			p[1] = row.getFloat("y2")/* - originY*/;
 			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T, p);
+			p = matrixMultiplication(T3d, p);
 			//row.setFloat("x2", p[0] + originX);
 			//row.setFloat("y2", p[1] + originY);
-			float x2 = p[0] + originX;
-			float y2 = p[1] + originY;
+			float x2 = p[0] /*+ originX*/;
+			float y2 = p[1] /*+ originY*/;
 
-			drawLine(x1, y1, x2, y2);
+			table2d.getRow(i).setFloat("x2", x2);
+			table2d.getRow(i).setFloat("y2", y2);
+
+			//drawLine(x1, y1, x2, y2);
+			i++;
 		}
+		drawProjection();
 	}
 
 	void axonometricProjection() {
@@ -237,8 +315,8 @@ public class Main extends PApplet {
 	}
 
 	void dimetricAxonometricProjection(float c1, float c2, float c3) {
-		alpha1 = degrees(atan(7f/8));
-		alpha2 = degrees(atan(1f/8));
+		alpha1 = degrees(atan(7f / 8));
+		alpha2 = degrees(atan(1f / 8));
 		axonometricProjection(c1, c2, c3, alpha1, alpha2);
 	}
 
@@ -272,7 +350,12 @@ public class Main extends PApplet {
 	}
 
 	float[] matrixMultiplication(float[][] t, float[] p) {
-		float[] transformed = new float[]{0, 0, 0, 1};
+		float[] transformed;
+		if (p.length == 4) {
+			transformed = new float[]{0, 0, 0, 1};
+		} else {
+			transformed = new float[]{0, 0, 1};
+		}
 
 		for (int i = 0; i < t.length; i++) {
 			float sum = 0;
@@ -283,28 +366,22 @@ public class Main extends PApplet {
 		}
 
 		try {
-			if (transformed[3] == 0) {
-				throw new ArithmeticException("Div null!!!");
-			}
-			else {
-				if (t.length == 4 && transformed[3] != 1) {
-					for (int i = 0; i < t.length; i++) {
-						transformed[i] = transformed[i] / transformed[t.length - 1];
-					}
+			if (t.length == 4 && transformed[3] != 1) {
+				if (transformed[3] == 0) {
+					throw new ArithmeticException("Div null!!!");
+				}
+				for (int i = 0; i < t.length; i++) {
+					transformed[i] = transformed[i] / transformed[t.length - 1];
 				}
 			}
-		}
-		catch (ArithmeticException ae) {
+		} catch (ArithmeticException ae) {
 			println(ae);
 		}
-
-
 		return transformed;
 	}
 
 	void rotate3d(float alpha) {
 		float[][] T = new Tinit(4).matrix;
-		// TODO: koordinata szerint epitse fel a T matrixot
 		T[1][1] = cos(radians(alpha));
 		T[1][2] = -sin(radians(alpha));
 		T[2][1] = sin(radians(alpha));
@@ -332,17 +409,29 @@ public class Main extends PApplet {
 		}
 	}
 
-	void transform(float[][] T, float originX, float originY, boolean checkOverflow, String method) {
-		for (TableRow row : table3d.rows()) {
-			float[] p = {0, 0, 1};
-			p[0] = row.getFloat("x1") - originX;
-			p[1] = row.getFloat("y1") - originY;
+	void transform(float originX, float originY, boolean checkOverflow, String method) {
+		float[] p;
 
+		for (TableRow row : table2d.rows()) {
+			p = new float[]{0, 0, 1};
+			p[0] = row.getFloat("x1")/* - originX*/;
+			p[1] = row.getFloat("y1")/* - originY*/;
 			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]/* + originX*/);
+			row.setFloat("y1", p[1]/* + originY*/);
 
-			row.setFloat("x1", p[0] + originX);
-			row.setFloat("y1", p[1] + originY);
+			p = new float[]{0, 0, 1};
+			p[0] = row.getFloat("x2")/* - originX*/;
+			p[1] = row.getFloat("y2")/* - originY*/;
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]/* + originX*/);
+			row.setFloat("y2", p[1]/* + originY*/);
 		}
+		/*
+		for (TableRow row : table2d.rows()) {
+			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
+		}
+		 */
 
 		if (checkOverflow)
 			checkOverflow(method);
@@ -364,24 +453,11 @@ public class Main extends PApplet {
 	}
 
 	public void translate(float transformX, float transformY, boolean checkOverflow) {
-		float[][] T = new Tinit().matrix;
+		T = new Tinit(3).matrix;
 		T[0][2] = transformX;
 		T[1][2] = transformY;
 
-		transform(T, 0, 0, checkOverflow, "translate");
-	}
-
-	void rotate(boolean checkOverflow) {
-		float[][] T = new Tinit().matrix;
-		T[0][0] = cos(radians(rotateAngle));
-		T[0][1] = -sin(radians(rotateAngle));
-		T[1][0] = sin(radians(rotateAngle));
-		T[1][1] = cos(radians(rotateAngle));
-
-		transform(T, originX, originY, checkOverflow, "translate");
-
-		T = new Tinit().matrix;
-		transform(T, originX, originY, checkOverflow, "scale");
+		transform(originX, originY, checkOverflow, "translate");
 	}
 
 	void scale(boolean checkOverflow) {
@@ -410,11 +486,11 @@ public class Main extends PApplet {
 	}
 
 	void scale(float transformX, float transformY, boolean checkOverflow) {
-		float[][] T = new Tinit().matrix;
+		T = new Tinit().matrix;
 		T[0][0] = transformX;
 		T[1][1] = transformY;
 
-		transform(T, originX, originY, checkOverflow, "scale");
+		transform(originX, originY, checkOverflow, "scale");
 	}
 
 	public void checkOverflow(String method) {
@@ -433,9 +509,9 @@ public class Main extends PApplet {
 				break;
 			}
 			case "scale": {
-				TableRow row0 = table3d.getRow(0);
+				TableRow row0 = table2d.getRow(0);
 
-				MinMax mm = new MinMax(row0.getFloat("x"), row0.getFloat("y"), row0.getFloat("x"), row0.getFloat("y"));
+				MinMax mm = new MinMax(row0.getFloat("x1"), row0.getFloat("y1"), row0.getFloat("x2"), row0.getFloat("y2"));
 				mm.find();
 
 				deltaX = 1;
@@ -456,12 +532,9 @@ public class Main extends PApplet {
 	}
 
 	public void mousePressed() {
-		if (translate || rotate || scale) {
+		if (translate || scale) {
 			if (translate) {
-				translate(true);
-			}
-			if (rotate) {
-				rotate(true);
+				translate(false);
 			}
 			if (scale) {
 				scale(true);
@@ -479,20 +552,12 @@ public class Main extends PApplet {
 				}
 				case 't': {
 					translate = !translate;
-					rotate = false;
-					scale = false;
-					break;
-				}
-				case 'f': {
-					rotate = !rotate;
-					translate = false;
 					scale = false;
 					break;
 				}
 				case 's': {
 					scale = !scale;
 					translate = false;
-					rotate = false;
 					break;
 				}
 			}
