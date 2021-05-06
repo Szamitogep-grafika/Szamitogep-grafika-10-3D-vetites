@@ -1,12 +1,9 @@
 import processing.core.PApplet;
 import processing.data.Table;
 import processing.data.TableRow;
-import processing.event.MouseEvent;
 
 public class Main extends PApplet {
-	boolean firstRun = true;
-	int originX;  // TESTING
-	int originY; // TESTING
+	boolean recalcProjection = true;
 
 	BoundingBox boundingBox = new BoundingBox();
 	Pixel projectionCenter = new Pixel();
@@ -90,10 +87,10 @@ public class Main extends PApplet {
 			y2 = table2d.getRow(0).getFloat("y2");
 
 			for (TableRow row : table2d.rows()) {
-				if (row.getFloat("x1") < x1) x1 = row.getFloat("x1");
-				if (row.getFloat("y1") < y1) y1 = row.getFloat("y1");
-				if (row.getFloat("x2") > x2) x2 = row.getFloat("x2");
-				if (row.getFloat("y2") > y2) y2 = row.getFloat("y2");
+				x1 = Math.min(x1, row.getFloat("x1"));
+				y1 = Math.min(y1, row.getFloat("y1"));
+				x2 = Math.max(x2, row.getFloat("x2"));
+				y2 = Math.max(y2, row.getFloat("y2"));
 			}
 
 			width = x2 - x1;
@@ -119,8 +116,6 @@ public class Main extends PApplet {
 
 	public void setup() {
 		size(640, 480);
-		originX = 0 / 2;  // TESTING
-		originY = 0 / 2; // TESTING
 
 		table3d = new Table();
 		table3d.addColumn("x1");
@@ -144,6 +139,7 @@ public class Main extends PApplet {
 			System.exit(1);
 		}
 
+
 		centralProjection();
 		//parallelProjection();
 		//axonometricProjection();
@@ -154,6 +150,7 @@ public class Main extends PApplet {
 		boundingBox.fit();
 		projectionCenter.x = width / 2f - boundingBox.center.x;
 		projectionCenter.y = height / 2f - boundingBox.center.y;
+
 	}
 
 	public void draw() {
@@ -161,6 +158,7 @@ public class Main extends PApplet {
 
 		d = 245;
 		//rotate3d(0.5f);
+
 		centralProjection();
 		//parallelProjection();
 		//axonometricProjection();
@@ -169,7 +167,6 @@ public class Main extends PApplet {
 		//dimetricAxonometricProjection(1, 1, 1);
 		drawProjection();
 
-		firstRun = false;
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
@@ -213,7 +210,7 @@ public class Main extends PApplet {
 		}
 
  */
-
+/*
 		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
 			if (boundingBox.x1 < 0)
 				projectionCenter.x -= (boundingBox.x1);
@@ -224,6 +221,20 @@ public class Main extends PApplet {
 			if (boundingBox.y2 > height)
 				projectionCenter.y -= (boundingBox.y2 - height);
 			translate(projectionCenter.x, projectionCenter.y);
+		}
+ */
+		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
+			transformX = 0;
+			transformY = 0;
+			if (boundingBox.x1 < 0)
+				transformX = -boundingBox.x1;
+			if (boundingBox.y1 < 0)
+				transformY = -boundingBox.y1;
+			if (boundingBox.x2 > width)
+				transformX = width - boundingBox.x2;
+			if (boundingBox.y2 > height)
+				transformY = height - boundingBox.y2;
+			translate(transformX, transformY);
 		}
 
 		boundingBox.draw();
@@ -496,7 +507,7 @@ public class Main extends PApplet {
 	}
 
 	public void keyPressed() {
-		if (table3d.getRowCount() % 2 == 0)   // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
+		if (table3d.getRowCount() % 2 == 0) {  // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
 			switch (key) {                  // A három funkció közül egyszerre csak az egyik működjön
 				case 'x': {
 					translate = false;
@@ -519,18 +530,8 @@ public class Main extends PApplet {
 					projectionCenter.x -= 250;
 				}
 			}
+		}
 	}
-
-
-	// TESTING
-	public void mouseWheel(MouseEvent event) {
-		float e = event.getCount();
-		if (e < 0)
-			scale(2, 2);
-		else
-			scale(0.5F, 0.5F);
-	}
-	// TESTING END
 
 	public void settings() {
 		setup();
