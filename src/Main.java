@@ -4,6 +4,7 @@ import processing.data.TableRow;
 
 public class Main extends PApplet {
 	boolean recalcProjection = true;
+	boolean firstRun = true;
 
 	BoundingBox boundingBox = new BoundingBox();
 	Pixel projectionCenter = new Pixel();
@@ -140,33 +141,32 @@ public class Main extends PApplet {
 		}
 
 
-		centralProjection();
+		//centralProjection();
 		//parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
 		//dimetricAxonometricProjection(1, 1, 1);
-		BoundingBox boundingBox = new BoundingBox();
-		boundingBox.fit();
-		projectionCenter.x = width / 2f - boundingBox.center.x;
-		projectionCenter.y = height / 2f - boundingBox.center.y;
-
+		//BoundingBox boundingBox = new BoundingBox();
+		//boundingBox.fit();
+		//projectionCenter.x = width / 2f - boundingBox.center.x;
+		//projectionCenter.y = height / 2f - boundingBox.center.y;
 	}
 
 	public void draw() {
 		background(204);
 
+
 		d = 245;
 		//rotate3d(0.5f);
 
-		centralProjection();
-		//parallelProjection();
+		//centralProjection();
+		parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
 		//dimetricAxonometricProjection(1, 1, 1);
 		drawProjection();
-
 	}
 
 	void drawLine(float x1, float y1, float x2, float y2) {
@@ -197,32 +197,15 @@ public class Main extends PApplet {
 	}
 
 	void drawProjection() {
-		translate(projectionCenter.x, projectionCenter.y);
-/*
-		if (boundingBox.width > width || boundingBox.height > height) {
-			float ratio = boundingBox.width / boundingBox.height;
-			float scaleRatio;
-			if (ratio > width / height)
-				scaleRatio = (width) / boundingBox.width;
-			else
-				scaleRatio = (height) / boundingBox.height;
-			scale(scaleRatio, scaleRatio, true);
-		}
-
- */
-/*
-		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
-			if (boundingBox.x1 < 0)
-				projectionCenter.x -= (boundingBox.x1);
-			if (boundingBox.y1 < 0)
-				projectionCenter.y -= (boundingBox.y1);
-			if (boundingBox.x2 > width)
-				projectionCenter.x -= (boundingBox.x2 - width);
-			if (boundingBox.y2 > height)
-				projectionCenter.y -= (boundingBox.y2 - height);
+		if (firstRun) {
+			BoundingBox boundingBox = new BoundingBox();
+			boundingBox.fit();
+			projectionCenter.x = width / 2f - boundingBox.center.x;
+			projectionCenter.y = height / 2f - boundingBox.center.y;
 			translate(projectionCenter.x, projectionCenter.y);
+			firstRun = false;
 		}
- */
+		/*
 		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
 			transformX = 0;
 			transformY = 0;
@@ -236,6 +219,8 @@ public class Main extends PApplet {
 				transformY = height - boundingBox.y2;
 			translate(transformX, transformY);
 		}
+		 */
+
 
 		boundingBox.draw();
 		for (TableRow row : table2d.rows()) {
@@ -244,32 +229,38 @@ public class Main extends PApplet {
 	}
 
 	void calculateProjection(float[][] T3d) {
-		table2d.clearRows();
-		float[] p;
-		int i = 0;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
+		if (recalcProjection) {
+			table2d.clearRows();
+			float[] p;
+			int i = 0;
+			for (TableRow row : table3d.rows()) {
+				p = new float[]{0, 0, 0, 1};
 
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T3d, p);
-			float x1 = p[0];
-			float y1 = p[1];
-			table2d.getRow(i).setFloat("x1", x1);
-			table2d.getRow(i).setFloat("y1", y1);
+				p[0] = row.getFloat("x1");
+				p[1] = row.getFloat("y1");
+				p[2] = row.getFloat("z1");
+				p = matrixMultiplication(T3d, p);
+				float x1 = p[0];
+				float y1 = p[1];
+				table2d.getRow(i).setFloat("x1", x1);
+				table2d.getRow(i).setFloat("y1", y1);
 
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T3d, p);
-			float x2 = p[0];
-			float y2 = p[1];
-			table2d.getRow(i).setFloat("x2", x2);
-			table2d.getRow(i).setFloat("y2", y2);
+				p = new float[]{0, 0, 0, 1};
+				p[0] = row.getFloat("x2");
+				p[1] = row.getFloat("y2");
+				p[2] = row.getFloat("z2");
+				p = matrixMultiplication(T3d, p);
+				float x2 = p[0];
+				float y2 = p[1];
+				table2d.getRow(i).setFloat("x2", x2);
+				table2d.getRow(i).setFloat("y2", y2);
 
-			i++;
+				i++;
+			}
+
+			checkOverflow();
+			translate(projectionCenter.x + transformX, projectionCenter.y + transformY);
+			recalcProjection = false;
 		}
 	}
 
@@ -411,6 +402,24 @@ public class Main extends PApplet {
 			row.setFloat("y2", p[1]);
 			row.setFloat("z2", p[2]);
 		}
+		recalcProjection = true;
+	}
+
+	void checkOverflow() {
+		if (boundingBox.x1 + transformX < 0) {
+			transformX = -boundingBox.x1;
+		}
+		if (boundingBox.y1 + transformY < 0) {
+			transformY = -boundingBox.y1;
+		}
+		if (boundingBox.x2 + transformX > width) {
+			transformX = (width - boundingBox.x2);
+		}
+		if (boundingBox.y2 + transformY > height) {
+			transformY = (height - boundingBox.y2);
+		}
+		projectionCenter.x += transformX;
+		projectionCenter.y += transformY;
 	}
 
 	void transform(String method) {
@@ -433,6 +442,8 @@ public class Main extends PApplet {
 		}
 
 		boundingBox.fit();
+		transformX = 0;
+		transformY = 0;
 	}
 
 	void translate() {
@@ -441,8 +452,11 @@ public class Main extends PApplet {
 		if (countClicks % 2 == 0) {
 			transformX = mouseX - transformX;
 			transformY = mouseY - transformY;
-			projectionCenter.x += transformX;
-			projectionCenter.y += transformY;
+
+			checkOverflow();
+
+			//projectionCenter.x += transformX;
+			//projectionCenter.y += transformY;
 			countClicks = 0;
 
 			translate(transformX, transformY);
