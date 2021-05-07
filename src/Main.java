@@ -160,8 +160,8 @@ public class Main extends PApplet {
 		d = 245;
 		//rotate3d(0.5f);
 
-		//centralProjection();
-		parallelProjection();
+		centralProjection();
+		//parallelProjection();
 		//axonometricProjection();
 		//isometricAxonometricProjection();
 		//frontalAxonometricProjection();
@@ -204,27 +204,16 @@ public class Main extends PApplet {
 			projectionCenter.y = height / 2f - boundingBox.center.y;
 			translate(projectionCenter.x, projectionCenter.y);
 			firstRun = false;
-		}
-		/*
-		if (boundingBox.x1 < 0 || boundingBox.y1 < 0 || boundingBox.x2 > width || boundingBox.y2 > height) {
-			transformX = 0;
-			transformY = 0;
-			if (boundingBox.x1 < 0)
-				transformX = -boundingBox.x1;
-			if (boundingBox.y1 < 0)
-				transformY = -boundingBox.y1;
-			if (boundingBox.x2 > width)
-				transformX = width - boundingBox.x2;
-			if (boundingBox.y2 > height)
-				transformY = height - boundingBox.y2;
-			translate(transformX, transformY);
-		}
-		 */
+		} else {
+			if (countClicks == 0) {
+				if (checkOverflow())
+					translate(transformX, transformY);
+			}
 
-
-		boundingBox.draw();
-		for (TableRow row : table2d.rows()) {
-			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
+			boundingBox.draw();
+			for (TableRow row : table2d.rows()) {
+				drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
+			}
 		}
 	}
 
@@ -405,21 +394,28 @@ public class Main extends PApplet {
 		recalcProjection = true;
 	}
 
-	void checkOverflow() {
+	boolean checkOverflow() {
+		boolean status = false;
 		if (boundingBox.x1 + transformX < 0) {
 			transformX = -boundingBox.x1;
+			status = true;
 		}
 		if (boundingBox.y1 + transformY < 0) {
 			transformY = -boundingBox.y1;
+			status = true;
 		}
 		if (boundingBox.x2 + transformX > width) {
 			transformX = (width - boundingBox.x2);
+			status = true;
 		}
 		if (boundingBox.y2 + transformY > height) {
 			transformY = (height - boundingBox.y2);
+			status = true;
 		}
 		projectionCenter.x += transformX;
 		projectionCenter.y += transformY;
+
+		return status;
 	}
 
 	void transform(String method) {
@@ -526,7 +522,7 @@ public class Main extends PApplet {
 				case 'x': {
 					translate = false;
 					scale = false;
-					rotate3d(1f);
+					rotate3d(10f);
 					break;
 				}
 				case 't': {
