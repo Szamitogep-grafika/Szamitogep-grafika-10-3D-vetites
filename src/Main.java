@@ -371,29 +371,32 @@ public class Main extends PApplet {
 
 	boolean checkOverflow() {
 		boolean status = false;
-		if (boundingBox.x1 + transformX < 0) {
-			transformX = -boundingBox.x1;
-			status = true;
+
+		if (translate) {
+			if (boundingBox.x1 + transformX < 0) {
+				transformX = -boundingBox.x1;
+				status = true;
+			}
+			if (boundingBox.y1 + transformY < 0) {
+				transformY = -boundingBox.y1;
+				status = true;
+			}
+			if (boundingBox.x2 + transformX > width) {
+				transformX = (width - boundingBox.x2);
+				status = true;
+			}
+			if (boundingBox.y2 + transformY > height) {
+				transformY = (height - boundingBox.y2);
+				status = true;
+			}
+			projectionCenter.x += transformX;
+			projectionCenter.y += transformY;
 		}
-		if (boundingBox.y1 + transformY < 0) {
-			transformY = -boundingBox.y1;
-			status = true;
-		}
-		if (boundingBox.x2 + transformX > width) {
-			transformX = (width - boundingBox.x2);
-			status = true;
-		}
-		if (boundingBox.y2 + transformY > height) {
-			transformY = (height - boundingBox.y2);
-			status = true;
-		}
-		projectionCenter.x += transformX;
-		projectionCenter.y += transformY;
 
 		return status;
 	}
 
-	void transform(String method) {
+	void transform() {
 		float[] p;
 
 		for (TableRow row : table2d.rows()) {
