@@ -3,34 +3,9 @@ import processing.data.Table;
 import processing.data.TableRow;
 
 public class Main extends PApplet {
-	boolean recalcProjection = true;
-	boolean firstRun = true;
-
-	BoundingBox boundingBox = new BoundingBox();
-	Pixel projectionCenter = new Pixel();
-
-	float[][] T = new Tinit(3).matrix;
-
-
-	Table table3d;
-	Table table2d;
-	boolean translate = false;
-	boolean scale = false;
-	float transformX, transformY;
-	int countClicks = 0;
-
-	float d = 376;
-	float vx = 0.5f, vy = 1f, vz = 3;
-	float alpha1, alpha2;
 
 	final static class Tinit {
 		float[][] matrix;
-
-		Tinit() {
-			this.matrix = new float[3][3];
-			for (int i = 0; i < 3; i++)
-				this.matrix[i][i] = 1;
-		}
 
 		public Tinit(int n) {
 			this.matrix = new float[n][n];
@@ -66,11 +41,6 @@ public class Main extends PApplet {
 		float x, y;
 
 		public Pixel() {
-		}
-
-		public Pixel(float x, float y) {
-			this.x = x;
-			this.y = y;
 		}
 	}
 
@@ -115,6 +85,36 @@ public class Main extends PApplet {
 		}
 	}
 
+	enum Method {
+		central, centralis,
+		parallel, parhuzamos,
+		axonometric, axonometrikus,
+		isometric, izometrikus,
+		frontal, frontalis,
+		dimetric, dimetrikus
+	}
+	Method method;
+
+	boolean recalcProjection = true;
+	boolean firstRun = true;
+
+	BoundingBox boundingBox = new BoundingBox();
+	Pixel projectionCenter = new Pixel();
+
+	float[][] T = new Tinit(3).matrix;
+
+	Table table3d;
+	Table table2d;
+	boolean translate = false;
+	boolean scale = false;
+	float transformX, transformY;
+	int countClicks = 0;
+
+	float d = 376;
+	float vx = 0.5f, vy = 1f, vz = 3;
+	float alpha1, alpha2;
+
+
 	public void setup() {
 		size(640, 480);
 
@@ -140,32 +140,12 @@ public class Main extends PApplet {
 			System.exit(1);
 		}
 
-
-		//centralProjection();
-		//parallelProjection();
-		//axonometricProjection();
-		//isometricAxonometricProjection();
-		//frontalAxonometricProjection();
-		//dimetricAxonometricProjection(1, 1, 1);
-		//BoundingBox boundingBox = new BoundingBox();
-		//boundingBox.fit();
-		//projectionCenter.x = width / 2f - boundingBox.center.x;
-		//projectionCenter.y = height / 2f - boundingBox.center.y;
+		method = Method.frontal;
 	}
 
 	public void draw() {
 		background(204);
-
-
-		d = 245;
-		//rotate3d(0.5f);
-
-		centralProjection();
-		//parallelProjection();
-		//axonometricProjection();
-		//isometricAxonometricProjection();
-		//frontalAxonometricProjection();
-		//dimetricAxonometricProjection(1, 1, 1);
+		project(method);
 		drawProjection();
 	}
 
@@ -253,6 +233,27 @@ public class Main extends PApplet {
 		}
 	}
 
+	void project(Method method) {
+		if (method == Method.central || method == Method.centralis) {
+			centralProjection();
+		}
+		if (method == Method.parallel || method == Method.parhuzamos) {
+			parallelProjection();
+		}
+		if (method == Method.axonometric || method == Method.axonometrikus) {
+			axonometricProjection();
+		}
+		if (method == Method.isometric || method == Method.izometrikus) {
+			isometricAxonometricProjection();
+		}
+		if (method == Method.frontal || method == Method.frontalis) {
+			frontalAxonometricProjection();
+		}
+		if (method == Method.dimetric || method == Method.dimetrikus) {
+			dimetricAxonometricProjection(1, 1, 1);
+		}
+	}
+
 	void centralProjection() {
 		centralProjection(d);
 	}
@@ -279,8 +280,6 @@ public class Main extends PApplet {
 	}
 
 	void axonometricProjection() {
-		//alpha1 += 1;
-		//alpha2 += 0.3;
 		axonometricProjection(1, 1, 1, alpha1, alpha2);
 	}
 
@@ -307,30 +306,6 @@ public class Main extends PApplet {
 		Axonometric axonometric = new Axonometric(c1, c2, c3, alpha1, alpha2);
 
 		calculateProjection(axonometric.matrix);
-		/*
-		float[] p;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0};
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(axonometric.matrix, p);
-			//row.setFloat("x1", p[0] + originX);
-			//row.setFloat("y1", p[1] + originY);
-			float x1 = p[0] + originX;
-			float y1 = p[1] + originY;
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(axonometric.matrix, p);
-			float x2 = p[0] + originX;
-			float y2 = p[1] + originY;
-
-			drawLine(x1, y1, x2, y2);
-		}
-		*/
 	}
 
 	float[] matrixMultiplication(float[][] t, float[] p) {
@@ -448,13 +423,8 @@ public class Main extends PApplet {
 		if (countClicks % 2 == 0) {
 			transformX = mouseX - transformX;
 			transformY = mouseY - transformY;
-
-			checkOverflow();
-
-			//projectionCenter.x += transformX;
-			//projectionCenter.y += transformY;
 			countClicks = 0;
-
+			checkOverflow();
 			translate(transformX, transformY);
 		} else {
 			transformX = mouseX;
@@ -467,7 +437,7 @@ public class Main extends PApplet {
 		T[0][2] = transformX;
 		T[1][2] = transformY;
 
-		transform("translate");
+		transform();
 	}
 
 	void scale() {
@@ -477,30 +447,20 @@ public class Main extends PApplet {
 			transformX = mouseX - transformX;
 			transformY = mouseY - transformY;
 			countClicks = 0;
-
-			// TESTING
-			if (transformX > 0) {
-				transformX = 2;
-				transformY = 2;
-			} else {
-				transformX = 0.5F;
-				transformY = 0.5F;
-			}
-			// TESTING END
-
-			scale(transformX, transformY, true);
+			checkOverflow();
+			scale2d(transformX, transformY);
 		} else {
 			transformX = mouseX;
 			transformY = mouseY;
 		}
 	}
 
-	void scale(float transformX, float transformY, boolean keepRatio) {
-		T = new Tinit().matrix;
+	void scale2d(float transformX, float transformY) {
+		T = new Tinit(3).matrix;
 		T[0][0] = transformX;
 		T[1][1] = transformY;
 
-		transform("scale");
+		transform();
 	}
 
 	public void mousePressed() {
@@ -511,33 +471,27 @@ public class Main extends PApplet {
 			if (scale) {
 				scale();
 			}
-		} else {
-			println(mouseX, mouseY); // DEBUG
 		}
 	}
 
 	public void keyPressed() {
-		if (table3d.getRowCount() % 2 == 0) {  // Megkezdett modell-elem esetén a transzformációk nem kapcsolhatók be
-			switch (key) {                  // A három funkció közül egyszerre csak az egyik működjön
+		if (table3d.getRowCount() % 2 == 0) {
+			switch (key) {
 				case 'x': {
 					translate = false;
 					scale = false;
-					rotate3d(10f);
+					rotate3d(1f);
 					break;
 				}
 				case 't': {
 					translate = !translate;
 					scale = false;
-					println("Translate: " + (translate ? "on" : "off"));
 					break;
 				}
 				case 's': {
 					scale = !scale;
 					translate = false;
 					break;
-				}
-				case '4': {
-					projectionCenter.x -= 250;
 				}
 			}
 		}
