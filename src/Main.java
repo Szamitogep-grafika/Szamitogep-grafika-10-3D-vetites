@@ -373,27 +373,7 @@ public class Main extends PApplet {
 			}
 		}
 
-		float[] p;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x1", p[0]);
-			row.setFloat("y1", p[1]);
-			row.setFloat("z1", p[2]);
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x2", p[0]);
-			row.setFloat("y2", p[1]);
-			row.setFloat("z2", p[2]);
-		}
-		recalcProjection = true;
+		transform3d(T);
 	}
 
 	void mirror(char axis) {
@@ -413,27 +393,7 @@ public class Main extends PApplet {
 			}
 		}
 
-		float[] p;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x1", p[0]);
-			row.setFloat("y1", p[1]);
-			row.setFloat("z1", p[2]);
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x2", p[0]);
-			row.setFloat("y2", p[1]);
-			row.setFloat("z2", p[2]);
-		}
-		recalcProjection = true;
+		transform3d(T);
 	}
 
 	boolean checkOverflow() {
@@ -513,6 +473,32 @@ public class Main extends PApplet {
 		translateY = 0;
 	}
 
+	void transform3d(float[][] T) {
+		float[] p;
+		for (TableRow row : table3d.rows()) {
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
+			row.setFloat("z1", p[2]);
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
+			row.setFloat("z2", p[2]);
+		}
+		recalcProjection = true;
+	}
+
+
+
 	void translate() {
 		countClicks++;
 
@@ -536,7 +522,7 @@ public class Main extends PApplet {
 		transform();
 	}
 
-	void scale() {
+	void scale2d() {
 		countClicks++;
 
 		if (countClicks % 2 == 0) {
@@ -558,13 +544,22 @@ public class Main extends PApplet {
 		transform();
 	}
 
+	void scale3d(float scaleX, float scaleY, float scaleZ) {
+		float[][] T = new Tinit(4).matrix;
+		T[0][0] = scaleX;
+		T[1][1] = scaleY;
+		T[2][2] = scaleZ;
+
+		transform3d(T);
+	}
+
 	public void mousePressed() {
 		if (translate || scale) {
 			if (translate) {
 				translate();
 			}
 			if (scale) {
-				scale();
+				scale2d();
 			}
 		}
 	}
@@ -598,8 +593,9 @@ public class Main extends PApplet {
 				break;
 			}
 			case 's': {
-				scale = !scale;
-				translate = false;
+				//scale = !scale;
+				//translate = false;
+				scale3d(1.3f, 1.5f, 1.7f);
 				break;
 			}
 		}
