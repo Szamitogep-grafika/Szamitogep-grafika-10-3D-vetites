@@ -135,14 +135,14 @@ public class Main extends PApplet {
 		table2d.addColumn("y2");
 
 		try {
-			table3d = loadTable("model.csv", "header");
+			table3d = loadTable("kocka-csonkolt.csv", "header");
 			if (table3d == null) throw new Exception("Nem lehet olvasni a modell-leíró állományt!");
 		} catch (Exception e) {
 			println(e.getMessage());
 			System.exit(1);
 		}
 
-		method = Method.frontal;
+		method = Method.dimetric;
 	}
 
 	public void draw() {
@@ -347,12 +347,71 @@ public class Main extends PApplet {
 		return transformed;
 	}
 
-	void rotate3d(float alpha) {
+	void rotate3d(char axis, float alpha) {
 		float[][] T = new Tinit(4).matrix;
-		T[1][1] = cos(radians(alpha));
-		T[1][2] = -sin(radians(alpha));
-		T[2][1] = sin(radians(alpha));
-		T[2][2] = cos(radians(alpha));
+		switch (axis) {
+			case 'x': {
+				T[1][1] = cos(radians(alpha));
+				T[1][2] = -sin(radians(alpha));
+				T[2][1] = sin(radians(alpha));
+				T[2][2] = cos(radians(alpha));
+				break;
+			}
+			case 'y': {
+				T[0][0] = cos(radians(alpha));
+				T[0][2] = sin(radians(alpha));
+				T[2][0] = -sin(radians(alpha));
+				T[2][2] = cos(radians(alpha));
+				break;
+			}
+			case 'z': {
+				T[0][0] = cos(radians(alpha));
+				T[0][1] = -sin(radians(alpha));
+				T[1][0] = sin(radians(alpha));
+				T[1][1] = cos(radians(alpha));
+				break;
+			}
+		}
+
+		float[] p;
+		for (TableRow row : table3d.rows()) {
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
+			row.setFloat("z1", p[2]);
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
+			row.setFloat("z2", p[2]);
+		}
+		recalcProjection = true;
+	}
+
+	void mirror(char axis) {
+		float[][] T = new Tinit(4).matrix;
+		switch (axis) {
+			case 'x': {
+				T[0][0] = -1;
+				break;
+			}
+			case 'y': {
+				T[1][1] = -1;
+				break;
+			}
+			case 'z': {
+				T[2][2] = -1;
+				break;
+			}
+		}
 
 		float[] p;
 		for (TableRow row : table3d.rows()) {
@@ -515,19 +574,22 @@ public class Main extends PApplet {
 			case 'x': {
 				translate = false;
 				scale = false;
-				rotate3d(1f);
+				//mirror('x');
+				rotate3d('x', 1f);
 				break;
 			}
 			case 'y': {
 				translate = false;
 				scale = false;
-				rotate3d(1f);
+				//mirror('y');
+				rotate3d('y', 1f);
 				break;
 			}
 			case 'z': {
 				translate = false;
 				scale = false;
-				rotate3d(1f);
+				//mirror('z');
+				rotate3d('z', 1f);
 				break;
 			}
 			case 't': {
