@@ -106,8 +106,11 @@ public class Main extends PApplet {
 
 	Table table3d;
 	Table table2d;
+
 	boolean translate = false;
 	boolean scale = false;
+	boolean scale3d = false;
+
 	float translateX, translateY;
 	float scaleX, scaleY;
 	int countClicks = 0;
@@ -194,8 +197,14 @@ public class Main extends PApplet {
 					if (checkOverflow())
 						scale2d(scaleX, scaleY);
 				}
-				if (checkOverflow())
+				if (checkOverflow()) {
 					translate(translateX, translateY);
+				}
+				if (scale3d)
+					if (checkOverflow()) {
+						scale2d(scaleX, scaleY);
+						//scale3d = false;
+					}
 			}
 
 			boundingBox.draw();
@@ -235,7 +244,6 @@ public class Main extends PApplet {
 				i++;
 			}
 
-			//checkOverflow();
 			translate(projectionCenter.x + translateX, projectionCenter.y + translateY);
 			recalcProjection = false;
 		}
@@ -399,7 +407,7 @@ public class Main extends PApplet {
 	boolean checkOverflow() {
 		boolean overflow = false;
 
-		if (scale) {
+		if (scale3d) {
 			if (boundingBox.width > width || boundingBox.height > height) {
 				float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
 				scaleX = ratio;
@@ -426,24 +434,54 @@ public class Main extends PApplet {
 				projectionCenter.y += translateY;
 			}
 		} else {
-			if (boundingBox.x1 + translateX < 0) {
-				translateX = -boundingBox.x1;
-				overflow = true;
+			if (scale) {
+				if (boundingBox.width > width || boundingBox.height > height) {
+					float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
+					scaleX = ratio;
+					scaleY = ratio;
+					overflow = true;
+				} else {
+					if (boundingBox.x1 < 0) {
+						translateX = abs(boundingBox.x1);
+						overflow = true;
+					}
+					if (boundingBox.y1 < 0) {
+						translateY = abs(boundingBox.y1);
+						overflow = true;
+					}
+					if (boundingBox.x2 > width) {
+						translateX = -abs(width - boundingBox.x2);
+						overflow = true;
+					}
+					if (boundingBox.y2 > height) {
+						translateY = -abs(height - boundingBox.y2);
+						overflow = true;
+					}
+					projectionCenter.x += translateX;
+					projectionCenter.y += translateY;
+				}
+			} else {
+				if (boundingBox.x1 + translateX < 0) {
+					translateX = -boundingBox.x1;
+					overflow = true;
+				}
+				if (boundingBox.y1 + translateY < 0) {
+					translateY = -boundingBox.y1;
+					overflow = true;
+				}
+				if (boundingBox.x2 + translateX > width) {
+					translateX = (width - boundingBox.x2);
+					overflow = true;
+				}
+				if (boundingBox.y2 + translateY > height) {
+					translateY = (height - boundingBox.y2);
+					overflow = true;
+				}
+				projectionCenter.x += translateX;
+				projectionCenter.y += translateY;
 			}
-			if (boundingBox.y1 + translateY < 0) {
-				translateY = -boundingBox.y1;
-				overflow = true;
-			}
-			if (boundingBox.x2 + translateX > width) {
-				translateX = (width - boundingBox.x2);
-				overflow = true;
-			}
-			if (boundingBox.y2 + translateY > height) {
-				translateY = (height - boundingBox.y2);
-				overflow = true;
-			}
-			projectionCenter.x += translateX;
-			projectionCenter.y += translateY;
+
+
 		}
 
 		return overflow;
@@ -496,7 +534,6 @@ public class Main extends PApplet {
 		}
 		recalcProjection = true;
 	}
-
 
 
 	void translate() {
@@ -595,6 +632,9 @@ public class Main extends PApplet {
 			case 's': {
 				//scale = !scale;
 				//translate = false;
+				//scale3d = true;
+				scale = true;
+				translate = false;
 				scale3d(1.3f, 1.5f, 1.7f);
 				break;
 			}
