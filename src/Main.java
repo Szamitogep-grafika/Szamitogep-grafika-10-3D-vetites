@@ -93,6 +93,7 @@ public class Main extends PApplet {
 		frontal, frontalis,
 		dimetric, dimetrikus
 	}
+
 	Method method;
 
 	boolean recalcProjection = true;
@@ -510,24 +511,34 @@ public class Main extends PApplet {
 	}
 
 	public void keyPressed() {
-		if (table3d.getRowCount() % 2 == 0) {
-			switch (key) {
-				case 'x': {
-					translate = false;
-					scale = false;
-					rotate3d(1f);
-					break;
-				}
-				case 't': {
-					translate = !translate;
-					scale = false;
-					break;
-				}
-				case 's': {
-					scale = !scale;
-					translate = false;
-					break;
-				}
+		switch (key) {
+			case 'x': {
+				translate = false;
+				scale = false;
+				rotate3d(1f);
+				break;
+			}
+			case 'y': {
+				translate = false;
+				scale = false;
+				rotate3d(1f);
+				break;
+			}
+			case 'z': {
+				translate = false;
+				scale = false;
+				rotate3d(1f);
+				break;
+			}
+			case 't': {
+				translate = !translate;
+				scale = false;
+				break;
+			}
+			case 's': {
+				scale = !scale;
+				translate = false;
+				break;
 			}
 		}
 	}
