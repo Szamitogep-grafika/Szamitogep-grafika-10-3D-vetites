@@ -93,6 +93,7 @@ public class Main extends PApplet {
 		frontal, frontalis,
 		dimetric, dimetrikus
 	}
+
 	Method method;
 
 	boolean recalcProjection = true;
@@ -107,7 +108,8 @@ public class Main extends PApplet {
 	Table table2d;
 	boolean translate = false;
 	boolean scale = false;
-	float transformX, transformY;
+	float translateX, translateY;
+	float scaleX, scaleY;
 	int countClicks = 0;
 
 	float d = 376;
@@ -186,8 +188,15 @@ public class Main extends PApplet {
 			firstRun = false;
 		} else {
 			if (countClicks == 0) {
-				if (checkOverflow())
-					translate(transformX, transformY);
+				if (translate)
+					if (checkOverflow())
+						translate(translateX, translateY);
+				if (scale) {
+					if (checkOverflow())
+						translate(translateX, translateY);
+					if (checkOverflow())
+						scale2d(scaleX, scaleY);
+				}
 			}
 
 			boundingBox.draw();
@@ -228,9 +237,248 @@ public class Main extends PApplet {
 			}
 
 			checkOverflow();
-			translate(projectionCenter.x + transformX, projectionCenter.y + transformY);
+			translate(projectionCenter.x + translateX, projectionCenter.y + translateY);
 			recalcProjection = false;
 		}
+	}
+
+	boolean checkOverflow() {
+		boolean overflow = false;
+
+		if (scale) {
+			if (boundingBox.width > width || boundingBox.height > height) {
+				float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
+				scaleX = ratio;
+				scaleY = ratio;
+				//translateX = width / 2 - boundingBox.center.x;
+				//translateY = height / 2 - boundingBox.center.y;
+
+				//projectionCenter.x += translateX;
+				//projectionCenter.y += translateY;
+
+				overflow = true;
+			} else {
+				if (boundingBox.x1 < 0) {
+					translateX = abs(boundingBox.x1);
+					overflow = true;
+				}
+				if (boundingBox.y1 < 0) {
+					translateY = abs(boundingBox.y1);
+					overflow = true;
+				}
+				if (boundingBox.x2 > width) {
+					translateX = -abs(width - boundingBox.x2);
+					overflow = true;
+				}
+				if (boundingBox.y2 > height) {
+					translateY = -abs(height - boundingBox.y2);
+					overflow = true;
+				}
+				projectionCenter.x += translateX;
+				projectionCenter.y += translateY;
+			}
+		}
+
+
+		if (translate) {
+			if (boundingBox.x1 + translateX < 0) {
+				translateX = -boundingBox.x1;
+				overflow = true;
+			}
+			if (boundingBox.y1 + translateY < 0) {
+				translateY = -boundingBox.y1;
+				overflow = true;
+			}
+			if (boundingBox.x2 + translateX > width) {
+				translateX = (width - boundingBox.x2);
+				overflow = true;
+			}
+			if (boundingBox.y2 + translateY > height) {
+				translateY = (height - boundingBox.y2);
+				overflow = true;
+			}
+			projectionCenter.x += translateX;
+			projectionCenter.y += translateY;
+		}
+
+		return overflow;
+	}
+
+	void transform() {
+		float[] p;
+
+		for (TableRow row : table2d.rows()) {
+			p = new float[]{0, 0, 1};
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
+
+			p = new float[]{0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
+		}
+
+		boundingBox.fit();
+		if (translate) {
+			translateX = 0;
+			translateY = 0;
+		} else if (scale) {
+			scaleX = 1;
+			scaleY = 1;
+		}
+	}
+
+	void translate() {
+		countClicks++;
+
+		if (countClicks % 2 == 0) {
+			translateX = mouseX - translateX;
+			translateY = mouseY - translateY;
+			countClicks = 0;
+			checkOverflow();
+			translate(translateX, translateY);
+		} else {
+			translateX = mouseX;
+			translateY = mouseY;
+		}
+	}
+
+	public void translate(float translateX, float translateY) {
+		T = new Tinit(3).matrix;
+		T[0][2] = translateX;
+		T[1][2] = translateY;
+
+		transform();
+	}
+
+	void scale() {
+		countClicks++;
+
+		if (countClicks % 2 == 0) {
+			scaleX = mouseX - scaleX;
+			scaleY = mouseY - scaleY;
+			countClicks = 0;
+			scaleX = 1.25f;
+			scaleY = 1.25f;
+			checkOverflow();
+			scale2d(scaleX, scaleY);
+		} else {
+			scaleX = mouseX;
+			scaleY = mouseY;
+		}
+	}
+
+	void scale2d(float scaleX, float scaleY) {
+		//float bbcx = boundingBox.center.x;
+		//float bbcy = boundingBox.center.y;
+		//translate(-bbcx, -bbcy);
+
+		T = new Tinit(3).matrix;
+		T[0][0] = scaleX;
+		T[1][1] = scaleY;
+		transform();
+
+		//translate(bbcx, bbcy);
+	}
+
+	public void mousePressed() {
+		if (translate || scale) {
+			if (translate) {
+				translate();
+			}
+			if (scale) {
+				scale();
+			}
+		}
+	}
+
+	public void keyPressed() {
+		if (table3d.getRowCount() % 2 == 0) {
+			switch (key) {
+				case 'x': {
+					translate = false;
+					scale = false;
+					rotate3d(1f);
+					break;
+				}
+				case 't': {
+					translate = !translate;
+					scale = false;
+					break;
+				}
+				case 's': {
+					scale = !scale;
+					translate = false;
+					break;
+				}
+			}
+		}
+	}
+
+	float[] matrixMultiplication(float[][] t, float[] p) {
+		float[] transformed;
+		if (p.length == 4) {
+			transformed = new float[]{0, 0, 0, 1};
+		} else {
+			transformed = new float[]{0, 0, 1};
+		}
+
+		for (int i = 0; i < t.length; i++) {
+			float sum = 0;
+			for (int j = 0; j < t[i].length; j++) {
+				sum += t[i][j] * p[j];
+			}
+			transformed[i] = sum;
+		}
+
+		try {
+			if (t.length == 4 && transformed[3] != 1) {
+				if (transformed[3] == 0) {
+					throw new ArithmeticException("Div null!!!");
+				}
+				for (int i = 0; i < t.length; i++) {
+					transformed[i] = transformed[i] / transformed[t.length - 1];
+				}
+			}
+		} catch (ArithmeticException ae) {
+			println(ae);
+		}
+		return transformed;
+	}
+
+	void rotate3d(float alpha) {
+		float[][] T = new Tinit(4).matrix;
+		T[1][1] = cos(radians(alpha));
+		T[1][2] = -sin(radians(alpha));
+		T[2][1] = sin(radians(alpha));
+		T[2][2] = cos(radians(alpha));
+
+		float[] p;
+		for (TableRow row : table3d.rows()) {
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x1");
+			p[1] = row.getFloat("y1");
+			p[2] = row.getFloat("z1");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x1", p[0]);
+			row.setFloat("y1", p[1]);
+			row.setFloat("z1", p[2]);
+
+			p = new float[]{0, 0, 0, 1};
+			p[0] = row.getFloat("x2");
+			p[1] = row.getFloat("y2");
+			p[2] = row.getFloat("z2");
+			p = matrixMultiplication(T, p);
+			row.setFloat("x2", p[0]);
+			row.setFloat("y2", p[1]);
+			row.setFloat("z2", p[2]);
+		}
+		recalcProjection = true;
 	}
 
 	void project(Method method) {
@@ -308,197 +556,6 @@ public class Main extends PApplet {
 		calculateProjection(axonometric.matrix);
 	}
 
-	float[] matrixMultiplication(float[][] t, float[] p) {
-		float[] transformed;
-		if (p.length == 4) {
-			transformed = new float[]{0, 0, 0, 1};
-		} else {
-			transformed = new float[]{0, 0, 1};
-		}
-
-		for (int i = 0; i < t.length; i++) {
-			float sum = 0;
-			for (int j = 0; j < t[i].length; j++) {
-				sum += t[i][j] * p[j];
-			}
-			transformed[i] = sum;
-		}
-
-		try {
-			if (t.length == 4 && transformed[3] != 1) {
-				if (transformed[3] == 0) {
-					throw new ArithmeticException("Div null!!!");
-				}
-				for (int i = 0; i < t.length; i++) {
-					transformed[i] = transformed[i] / transformed[t.length - 1];
-				}
-			}
-		} catch (ArithmeticException ae) {
-			println(ae);
-		}
-		return transformed;
-	}
-
-	void rotate3d(float alpha) {
-		float[][] T = new Tinit(4).matrix;
-		T[1][1] = cos(radians(alpha));
-		T[1][2] = -sin(radians(alpha));
-		T[2][1] = sin(radians(alpha));
-		T[2][2] = cos(radians(alpha));
-
-		float[] p;
-		for (TableRow row : table3d.rows()) {
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p[2] = row.getFloat("z1");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x1", p[0]);
-			row.setFloat("y1", p[1]);
-			row.setFloat("z1", p[2]);
-
-			p = new float[]{0, 0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p[2] = row.getFloat("z2");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x2", p[0]);
-			row.setFloat("y2", p[1]);
-			row.setFloat("z2", p[2]);
-		}
-		recalcProjection = true;
-	}
-
-	boolean checkOverflow() {
-		boolean status = false;
-
-		if (translate) {
-			if (boundingBox.x1 + transformX < 0) {
-				transformX = -boundingBox.x1;
-				status = true;
-			}
-			if (boundingBox.y1 + transformY < 0) {
-				transformY = -boundingBox.y1;
-				status = true;
-			}
-			if (boundingBox.x2 + transformX > width) {
-				transformX = (width - boundingBox.x2);
-				status = true;
-			}
-			if (boundingBox.y2 + transformY > height) {
-				transformY = (height - boundingBox.y2);
-				status = true;
-			}
-			projectionCenter.x += transformX;
-			projectionCenter.y += transformY;
-		}
-
-		return status;
-	}
-
-	void transform() {
-		float[] p;
-
-		for (TableRow row : table2d.rows()) {
-			p = new float[]{0, 0, 1};
-			p[0] = row.getFloat("x1");
-			p[1] = row.getFloat("y1");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x1", p[0]);
-			row.setFloat("y1", p[1]);
-
-			p = new float[]{0, 0, 1};
-			p[0] = row.getFloat("x2");
-			p[1] = row.getFloat("y2");
-			p = matrixMultiplication(T, p);
-			row.setFloat("x2", p[0]);
-			row.setFloat("y2", p[1]);
-		}
-
-		boundingBox.fit();
-		transformX = 0;
-		transformY = 0;
-	}
-
-	void translate() {
-		countClicks++;
-
-		if (countClicks % 2 == 0) {
-			transformX = mouseX - transformX;
-			transformY = mouseY - transformY;
-			countClicks = 0;
-			checkOverflow();
-			translate(transformX, transformY);
-		} else {
-			transformX = mouseX;
-			transformY = mouseY;
-		}
-	}
-
-	public void translate(float transformX, float transformY) {
-		T = new Tinit(3).matrix;
-		T[0][2] = transformX;
-		T[1][2] = transformY;
-
-		transform();
-	}
-
-	void scale() {
-		countClicks++;
-
-		if (countClicks % 2 == 0) {
-			transformX = mouseX - transformX;
-			transformY = mouseY - transformY;
-			countClicks = 0;
-			checkOverflow();
-			scale2d(transformX, transformY);
-		} else {
-			transformX = mouseX;
-			transformY = mouseY;
-		}
-	}
-
-	void scale2d(float transformX, float transformY) {
-		T = new Tinit(3).matrix;
-		T[0][0] = transformX;
-		T[1][1] = transformY;
-
-		transform();
-	}
-
-	public void mousePressed() {
-		if (translate || scale) {
-			if (translate) {
-				translate();
-			}
-			if (scale) {
-				scale();
-			}
-		}
-	}
-
-	public void keyPressed() {
-		if (table3d.getRowCount() % 2 == 0) {
-			switch (key) {
-				case 'x': {
-					translate = false;
-					scale = false;
-					rotate3d(1f);
-					break;
-				}
-				case 't': {
-					translate = !translate;
-					scale = false;
-					break;
-				}
-				case 's': {
-					scale = !scale;
-					translate = false;
-					break;
-				}
-			}
-		}
-	}
 
 	public void settings() {
 		setup();
