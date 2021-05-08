@@ -107,7 +107,8 @@ public class Main extends PApplet {
 	Table table2d;
 	boolean translate = false;
 	boolean scale = false;
-	float transformX, transformY;
+	float translateX, translateY;
+	float scaleX, scaleY;
 	int countClicks = 0;
 
 	float d = 376;
@@ -186,8 +187,14 @@ public class Main extends PApplet {
 			firstRun = false;
 		} else {
 			if (countClicks == 0) {
+				if (scale) {
+					if (checkOverflow())
+						translate(translateX, translateY);
+					if (checkOverflow())
+						scale2d(scaleX, scaleY);
+				}
 				if (checkOverflow())
-					translate(transformX, transformY);
+					translate(translateX, translateY);
 			}
 
 			boundingBox.draw();
@@ -227,8 +234,8 @@ public class Main extends PApplet {
 				i++;
 			}
 
-			checkOverflow();
-			translate(projectionCenter.x + transformX, projectionCenter.y + transformY);
+			//checkOverflow();
+			translate(projectionCenter.x + translateX, projectionCenter.y + translateY);
 			recalcProjection = false;
 		}
 	}
@@ -370,30 +377,59 @@ public class Main extends PApplet {
 	}
 
 	boolean checkOverflow() {
-		boolean status = false;
-		if (boundingBox.x1 + transformX < 0) {
-			transformX = -boundingBox.x1;
-			status = true;
-		}
-		if (boundingBox.y1 + transformY < 0) {
-			transformY = -boundingBox.y1;
-			status = true;
-		}
-		if (boundingBox.x2 + transformX > width) {
-			transformX = (width - boundingBox.x2);
-			status = true;
-		}
-		if (boundingBox.y2 + transformY > height) {
-			transformY = (height - boundingBox.y2);
-			status = true;
-		}
-		projectionCenter.x += transformX;
-		projectionCenter.y += transformY;
+		boolean overflow = false;
 
-		return status;
+		if (scale) {
+			if (boundingBox.width > width || boundingBox.height > height) {
+				float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
+				scaleX = ratio;
+				scaleY = ratio;
+				overflow = true;
+			} else {
+				if (boundingBox.x1 < 0) {
+					translateX = abs(boundingBox.x1);
+					overflow = true;
+				}
+				if (boundingBox.y1 < 0) {
+					translateY = abs(boundingBox.y1);
+					overflow = true;
+				}
+				if (boundingBox.x2 > width) {
+					translateX = -abs(width - boundingBox.x2);
+					overflow = true;
+				}
+				if (boundingBox.y2 > height) {
+					translateY = -abs(height - boundingBox.y2);
+					overflow = true;
+				}
+				projectionCenter.x += translateX;
+				projectionCenter.y += translateY;
+			}
+		} else {
+			if (boundingBox.x1 + translateX < 0) {
+				translateX = -boundingBox.x1;
+				overflow = true;
+			}
+			if (boundingBox.y1 + translateY < 0) {
+				translateY = -boundingBox.y1;
+				overflow = true;
+			}
+			if (boundingBox.x2 + translateX > width) {
+				translateX = (width - boundingBox.x2);
+				overflow = true;
+			}
+			if (boundingBox.y2 + translateY > height) {
+				translateY = (height - boundingBox.y2);
+				overflow = true;
+			}
+			projectionCenter.x += translateX;
+			projectionCenter.y += translateY;
+		}
+
+		return overflow;
 	}
 
-	void transform(String method) {
+	void transform() {
 		float[] p;
 
 		for (TableRow row : table2d.rows()) {
@@ -413,29 +449,29 @@ public class Main extends PApplet {
 		}
 
 		boundingBox.fit();
-		transformX = 0;
-		transformY = 0;
+		translateX = 0;
+		translateY = 0;
 	}
 
 	void translate() {
 		countClicks++;
 
 		if (countClicks % 2 == 0) {
-			transformX = mouseX - transformX;
-			transformY = mouseY - transformY;
+			translateX = mouseX - translateX;
+			translateY = mouseY - translateY;
 			countClicks = 0;
 			checkOverflow();
-			translate(transformX, transformY);
+			translate(translateX, translateY);
 		} else {
-			transformX = mouseX;
-			transformY = mouseY;
+			translateX = mouseX;
+			translateY = mouseY;
 		}
 	}
 
-	public void translate(float transformX, float transformY) {
+	public void translate(float translateX, float translateY) {
 		T = new Tinit(3).matrix;
-		T[0][2] = transformX;
-		T[1][2] = transformY;
+		T[0][2] = translateX;
+		T[1][2] = translateY;
 
 		transform();
 	}
@@ -444,14 +480,13 @@ public class Main extends PApplet {
 		countClicks++;
 
 		if (countClicks % 2 == 0) {
-			transformX = mouseX - transformX;
-			transformY = mouseY - transformY;
+			translateX = mouseX - translateX;
+			translateY = mouseY - translateY;
 			countClicks = 0;
-			checkOverflow();
-			scale2d(transformX, transformY);
+			scale2d(translateX, translateY);
 		} else {
-			transformX = mouseX;
-			transformY = mouseY;
+			translateX = mouseX;
+			translateY = mouseY;
 		}
 	}
 
