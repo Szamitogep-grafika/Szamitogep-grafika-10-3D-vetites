@@ -189,28 +189,23 @@ public class Main extends PApplet {
 			projectionCenter.y = height / 2f - boundingBox.center.y;
 			translate(projectionCenter.x, projectionCenter.y);
 			firstRun = false;
-		} else {
-			if (countClicks == 0) {
-				if (scale) {
-					if (checkOverflow())
-						translate(translateX, translateY);
-					if (checkOverflow())
-						scale2d(scaleX, scaleY);
-				}
-				if (checkOverflow()) {
-					translate(translateX, translateY);
-				}
-				if (scale3d)
-					if (checkOverflow()) {
-						scale2d(scaleX, scaleY);
-						//scale3d = false;
-					}
+		}
+		//else // nincs else, biztosra megyunk, ha esetleg a modell alapesetben is kilogna
+		{
+			boundingBox.fit();
+
+			if (checkOverflow()) {
+				scale2d(scaleX, scaleY);
 			}
 
-			boundingBox.draw();
-			for (TableRow row : table2d.rows()) {
-				drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
+			if (checkOverflow()) {
+				translate(translateX, translateY);
 			}
+		}
+
+		boundingBox.draw();
+		for (TableRow row : table2d.rows()) {
+			drawLine(row.getFloat("x1"), row.getFloat("y1"), row.getFloat("x2"), row.getFloat("y2"));
 		}
 	}
 
@@ -407,83 +402,31 @@ public class Main extends PApplet {
 	boolean checkOverflow() {
 		boolean overflow = false;
 
-		if (scale3d) {
-			if (boundingBox.width > width || boundingBox.height > height) {
-				float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
-				scaleX = ratio;
-				scaleY = ratio;
-				overflow = true;
-			} else {
-				if (boundingBox.x1 < 0) {
-					translateX = abs(boundingBox.x1);
-					overflow = true;
-				}
-				if (boundingBox.y1 < 0) {
-					translateY = abs(boundingBox.y1);
-					overflow = true;
-				}
-				if (boundingBox.x2 > width) {
-					translateX = -abs(width - boundingBox.x2);
-					overflow = true;
-				}
-				if (boundingBox.y2 > height) {
-					translateY = -abs(height - boundingBox.y2);
-					overflow = true;
-				}
-				projectionCenter.x += translateX;
-				projectionCenter.y += translateY;
-			}
+		if (boundingBox.width > width || boundingBox.height > height) {
+			float ratio = Math.min((width) / (boundingBox.width+1), (height) / (boundingBox.height+1));
+			scaleX = ratio;
+			scaleY = ratio;
+			overflow = true;
 		} else {
-			if (scale) {
-				if (boundingBox.width > width || boundingBox.height > height) {
-					float ratio = Math.min(width / boundingBox.width, height / boundingBox.height);
-					scaleX = ratio;
-					scaleY = ratio;
-					overflow = true;
-				} else {
-					if (boundingBox.x1 < 0) {
-						translateX = abs(boundingBox.x1);
-						overflow = true;
-					}
-					if (boundingBox.y1 < 0) {
-						translateY = abs(boundingBox.y1);
-						overflow = true;
-					}
-					if (boundingBox.x2 > width) {
-						translateX = -abs(width - boundingBox.x2);
-						overflow = true;
-					}
-					if (boundingBox.y2 > height) {
-						translateY = -abs(height - boundingBox.y2);
-						overflow = true;
-					}
-					projectionCenter.x += translateX;
-					projectionCenter.y += translateY;
-				}
-			} else {
-				if (boundingBox.x1 + translateX < 0) {
-					translateX = -boundingBox.x1;
-					overflow = true;
-				}
-				if (boundingBox.y1 + translateY < 0) {
-					translateY = -boundingBox.y1;
-					overflow = true;
-				}
-				if (boundingBox.x2 + translateX > width) {
-					translateX = (width - boundingBox.x2);
-					overflow = true;
-				}
-				if (boundingBox.y2 + translateY > height) {
-					translateY = (height - boundingBox.y2);
-					overflow = true;
-				}
-				projectionCenter.x += translateX;
-				projectionCenter.y += translateY;
+			if (boundingBox.x1 < 0) {
+				translateX = abs(boundingBox.x1);
+				overflow = true;
 			}
-
-
+			if (boundingBox.y1 < 0) {
+				translateY = abs(boundingBox.y1);
+				overflow = true;
+			}
+			if (boundingBox.x2 > width) {
+				translateX = -abs(width - boundingBox.x2);
+				overflow = true;
+			}
+			if (boundingBox.y2 > height) {
+				translateY = -abs(height - boundingBox.y2);
+				overflow = true;
+			}
+			projectionCenter.x += translateX;
+			projectionCenter.y += translateY;
 		}
-
 		return overflow;
 	}
 
